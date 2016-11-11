@@ -1,22 +1,25 @@
 package me.wcy.chart.view;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
+import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 
-import me.wcy.chart.R;
 import me.wcy.chart.ChartUtils;
-import me.wcy.chart.view.base.GridChart;
+import me.wcy.chart.R;
 import me.wcy.chart.config.LineConfig;
 import me.wcy.chart.data.GridData;
+import me.wcy.chart.view.base.GridChart;
 
 /**
  * Created by hzwangchenyan on 2016/10/8.
@@ -33,6 +36,9 @@ public class LineChart extends GridChart {
     private RectF tipsRect = new RectF();
     private int tapPosition = -1;
 
+    private LinearGradient[] shadowGradients;
+    private int[] shadowColors;
+
     public LineChart(Context context) {
         this(context, null);
     }
@@ -43,10 +49,16 @@ public class LineChart extends GridChart {
 
     public LineChart(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init();
+        init(attrs);
     }
 
-    private void init() {
+    private void init(AttributeSet attrs) {
+        TypedArray ta = getResources().obtainAttributes(attrs, R.styleable.LineChart);
+        getConfig().setCurvedLine(ta.getBoolean(R.styleable.LineChart_lcCurvedLine, false));
+        getConfig().setShowShadow(ta.getBoolean(R.styleable.LineChart_lcShowShadow, false));
+        getConfig().setGradientShadow(ta.getBoolean(R.styleable.LineChart_lcGradientShadow, false));
+        ta.recycle();
+
         setupPaints();
     }
 
@@ -70,7 +82,7 @@ public class LineChart extends GridChart {
 
         // 点击选中线画笔
         tapLinePaint.setAntiAlias(true);
-        tapLinePaint.setColor(0xFF979797);
+        tapLinePaint.setColor(Color.GRAY);
         tapLinePaint.setStyle(Paint.Style.STROKE);
         tapLinePaint.setStrokeWidth(ChartUtils.dp2px(1));
 
@@ -86,10 +98,33 @@ public class LineChart extends GridChart {
     }
 
     @Override
-    protected void onConfig() {
-        super.onConfig();
+    protected void onDataChanged() {
+        super.onDataChanged();
+        if (dataList.isEmpty()) {
+            return;
+        }
 
         tapPosition = -1;
+
+        if (getConfig().isShowShadow()) {
+            if (getConfig().isGradientShadow()) {
+                shadowGradients = new LinearGradient[dataList.get(0).getEntries().length];
+                for (int i = 0; i < dataList.get(0).getEntries().length; i++) {
+                    int color0 = dataList.get(0).getEntries()[i].getColor();
+                    int color1 = Color.argb((int) (Color.alpha(color0) * 0.1), Color.red(color0), Color.green(color0), Color.blue(color0));
+                    LinearGradient gradient = new LinearGradient(0, getTextHeight(), 0, getChartBottom(),
+                            color0, color1, Shader.TileMode.CLAMP);
+                    shadowGradients[i] = gradient;
+                }
+            } else {
+                shadowColors = new int[dataList.get(0).getEntries().length];
+                for (int i = 0; i < dataList.get(0).getEntries().length; i++) {
+                    int color = dataList.get(0).getEntries()[i].getColor();
+                    int shadowColor = Color.argb((int) (Color.alpha(color) * 0.2), Color.red(color), Color.green(color), Color.blue(color));
+                    shadowColors[i] = shadowColor;
+                }
+            }
+        }
     }
 
     @Override
@@ -108,25 +143,13 @@ public class LineChart extends GridChart {
 
         textPaint.setTextAlign(Paint.Align.LEFT);
         for (GridData.Entry entry : dataList.get(0).getEntries()) {
-            pointPaint.setColor(entry.getLineColor());
-            textPaint.setColor(entry.getLineColor());
+            pointPaint.setColor(entry.getColor());
+            textPaint.setColor(entry.getColor());
             canvas.drawCircle(descStartX + pointRadius, descMidY, pointRadius, pointPaint);
 
             descStartX += pointRadius * 2 + spacing1;
             canvas.drawText(entry.getDesc(), descStartX, getHeight() - getTextOffsetY(), textPaint);
             descStartX += textPaint.measureText(entry.getDesc()) + spacing2;
-        }
-    }
-
-    @Override
-    protected void drawTitle(Canvas canvas) {
-        textPaint.setTextAlign(Paint.Align.CENTER);
-        textPaint.setColor(getConfig().getTextColor());
-        for (int i = 0; i < renderTitleList.size(); i++) {
-            int index = renderTitleList.get(i);
-            String title = dataList.get(index).getTitle();
-            float drawX = getScaledItemWidth() * (index + 0.5f);
-            canvas.drawText(title, drawX, getChartBottom() + getBottomTextHeight() - getTextOffsetY(), textPaint);
         }
     }
 
@@ -163,14 +186,16 @@ public class LineChart extends GridChart {
                 path.lineTo(nextX, nextY);
             }
         }
-        linePaint.setColor(dataList.get(0).getEntries()[index].getLineColor());
+        linePaint.setColor(dataList.get(0).getEntries()[index].getColor());
         canvas.drawPath(path, linePaint);
 
         // 绘制阴影
         if (getConfig().isShowShadow() && dataList.size() > 1) {
-            int color = dataList.get(0).getEntries()[index].getLineColor();
-            int alphaColor = Color.argb((int) (Color.alpha(color) * 0.2), Color.red(color), Color.green(color), Color.blue(color));
-            shadowPaint.setColor(alphaColor);
+            if (getConfig().isGradientShadow()) {
+                shadowPaint.setShader(shadowGradients[index]);
+            } else {
+                shadowPaint.setColor(shadowColors[index]);
+            }
             float lastRenderX = getScaledItemWidth() * (lastRenderItem + 0.5f);
             path.lineTo(lastRenderX, getChartBottom());
             path.lineTo(getScaledItemWidth() * (firstRenderItem + 0.5f), getChartBottom());
@@ -182,13 +207,13 @@ public class LineChart extends GridChart {
     private void drawTips(Canvas canvas) {
         GridData tapData = dataList.get(tapPosition);
 
-        canvas.drawLine(getScaledItemWidth() * (tapPosition + 0.5f), getChartBottom() - tapData.getMaxValue() * getItemHeightRatio() - ChartUtils.dp2px(25),
+        canvas.drawLine(getScaledItemWidth() * (tapPosition + 0.5f), getTextHeight(),
                 getScaledItemWidth() * (tapPosition + 0.5f), getChartBottom(), tapLinePaint);
 
         float pointX = getScaledItemWidth() * (tapPosition + 0.5f);
         for (GridData.Entry entry : tapData.getEntries()) {
             float pointY = getChartBottom() - (entry.getValue() * getItemHeightRatio());
-            pointPaint.setColor(entry.getLineColor());
+            pointPaint.setColor(entry.getColor());
             canvas.drawCircle(pointX, pointY, ChartUtils.dp2px(4), clearPaint);
             canvas.drawCircle(pointX, pointY, ChartUtils.dp2px(3), pointPaint);
         }
@@ -198,12 +223,12 @@ public class LineChart extends GridChart {
     }
 
     private void drawTipsBackground(Canvas canvas) {
-        float textVerticalSpacing = ChartUtils.dp2px(10);
+        float textVerticalSpacing = ChartUtils.dp2px(5);
         float tipsPointRadius = ChartUtils.dp2px(4);
-        float spacing1 = ChartUtils.dp2px(6);
-        float spacing2 = ChartUtils.dp2px(20);
-        float tipsPadding = ChartUtils.dp2px(15);
-        float tipsMargin = ChartUtils.dp2px(15);
+        float spacing1 = ChartUtils.dp2px(4);
+        float spacing2 = ChartUtils.dp2px(10);
+        float tipsPadding = ChartUtils.dp2px(10);
+        float tipsMargin = ChartUtils.dp2px(10);
 
         GridData tapData = dataList.get(tapPosition);
 
@@ -211,7 +236,7 @@ public class LineChart extends GridChart {
         float maxValueWidth = 0;
         for (GridData.Entry entry : tapData.getEntries()) {
             float descWidth = textPaint.measureText(entry.getDesc());
-            float valueWidth = textPaint.measureText(String.valueOf(entry.getValue()));
+            float valueWidth = textPaint.measureText(String.valueOf((int) entry.getValue()));
             maxDescWidth = Math.max(maxDescWidth, descWidth);
             maxValueWidth = Math.max(maxValueWidth, valueWidth);
         }
@@ -222,14 +247,11 @@ public class LineChart extends GridChart {
         float rectHeight = (getTextHeight() + textVerticalSpacing) * tapData.getEntries().length + getTextHeight() + tipsPadding * 2;
 
         float rectLeft = getScaledItemWidth() * (tapPosition + 0.5f) + tipsMargin;
-        float rectBottom = (getChartBottom() - tapData.getMaxValue() * getItemHeightRatio()) - tipsMargin;
+        float rectBottom = getChartBottom() - (getChartBottom() - getTextHeight() - rectHeight) / 2;
         tipsRect.set(rectLeft, rectBottom - rectHeight, rectLeft + rectWidth, rectBottom);
 
         if (tipsRect.right + translateX > getChartWidth() - tipsMargin) {
             tipsRect.offsetTo(getScaledItemWidth() * (tapPosition + 0.5f) - tipsMargin - tipsRect.width(), tipsRect.top);
-        }
-        if (tipsRect.top < 0) {
-            tipsRect.offsetTo(tipsRect.left, (getChartBottom() - tapData.getMaxValue() * getItemHeightRatio()) + tipsMargin);
         }
 
         Drawable drawable = getContext().getResources().getDrawable(R.drawable.card_bg);
@@ -238,11 +260,11 @@ public class LineChart extends GridChart {
     }
 
     private void drawTipsText(Canvas canvas) {
-        float textVerticalSpacing = ChartUtils.dp2px(10);
+        float textVerticalSpacing = ChartUtils.dp2px(5);
         float tipsPointRadius = ChartUtils.dp2px(4);
-        float spacing1 = ChartUtils.dp2px(6);
-        float spacing2 = ChartUtils.dp2px(20);
-        float tipsPadding = ChartUtils.dp2px(15);
+        float spacing1 = ChartUtils.dp2px(4);
+        float spacing2 = ChartUtils.dp2px(10);
+        float tipsPadding = ChartUtils.dp2px(10);
 
         GridData tapData = dataList.get(tapPosition);
 
@@ -254,16 +276,16 @@ public class LineChart extends GridChart {
 
         float textY = tipsRect.top + tipsPadding + getTextHeight();
         textPaint.setTextAlign(Paint.Align.LEFT);
-        textPaint.setColor(0xFF222222);
+        textPaint.setColor(Color.BLACK);
         canvas.drawText(tapData.getTitle(), tipsRect.left + tipsPadding, textY - getTextOffsetY(), textPaint);
         for (GridData.Entry entry : tapData.getEntries()) {
             textY += getTextHeight() + textVerticalSpacing;
             float startX = tipsRect.left + tipsPadding;
-            pointPaint.setColor(entry.getLineColor());
+            pointPaint.setColor(entry.getColor());
             canvas.drawCircle(startX + tipsPointRadius, textY - getTextHeight() / 2, tipsPointRadius, pointPaint);
 
             startX += tipsPointRadius * 2 + spacing1;
-            textPaint.setColor(entry.getLineColor());
+            textPaint.setColor(entry.getColor());
             canvas.drawText(entry.getDesc(), startX, textY - getTextOffsetY(), textPaint);
 
             startX += maxDescWidth + spacing2;

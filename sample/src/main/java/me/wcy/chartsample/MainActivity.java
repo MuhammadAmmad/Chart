@@ -1,6 +1,5 @@
 package me.wcy.chartsample;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.ScrollView;
@@ -12,6 +11,7 @@ import java.util.Random;
 import me.wcy.chart.data.GridData;
 import me.wcy.chart.view.BarChart;
 import me.wcy.chart.view.LineChart;
+import me.wcy.chart.view.base.GridChart;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -29,41 +29,33 @@ public class MainActivity extends AppCompatActivity {
         lineChart2.setScrollView(scrollView);
         barChart.setScrollView(scrollView);
 
-        setLineChartData(lineChart);
-        setLineChartData(lineChart2);
-        setBarChartData(barChart);
+        setChartData(lineChart);
+        setChartData(lineChart2);
+        setChartData(barChart);
     }
 
-    private void setLineChartData(LineChart lineChart) {
+    private void setChartData(GridChart chart) {
         List<GridData> dataList = new ArrayList<>();
-        dataList.add(randomData("魔神"));
-        dataList.add(randomData("剑圣"));
-        dataList.add(randomData("鬼泣"));
-        dataList.add(randomData("修罗"));
-        dataList.add(randomData("忍者"));
-        dataList.add(randomData("百花"));
-        dataList.add(randomData("驱魔"));
+        dataList.add(randomData("1月"));
+        dataList.add(randomData("2月"));
+        dataList.add(randomData("3月"));
+        dataList.add(randomData("4月"));
+        dataList.add(randomData("5月"));
+        dataList.add(randomData("6月"));
+        dataList.add(randomData("7月"));
+        dataList.add(randomData("8月"));
+        dataList.add(randomData("9月"));
+        dataList.add(randomData("10月"));
+        dataList.add(randomData("11月"));
+        dataList.add(randomData("12月"));
 
-        lineChart.setDataList(dataList, true);
-    }
-
-    private void setBarChartData(BarChart barChart) {
-        List<GridData> dataList = new ArrayList<>();
-        dataList.add(randomData("魔神"));
-        dataList.add(randomData("剑圣"));
-        dataList.add(randomData("鬼泣"));
-        dataList.add(randomData("修罗"));
-        dataList.add(randomData("忍者"));
-        dataList.add(randomData("百花"));
-        dataList.add(randomData("驱魔"));
-
-        barChart.setDataList(dataList, true);
+        chart.setDataList(dataList, true);
     }
 
     private GridData randomData(String title) {
         GridData.Entry[] entries = new GridData.Entry[3];
-        String[] descs = new String[]{"力量", "智力", "体力"};
-        int[] colors = new int[]{Color.RED, Color.BLUE, Color.YELLOW};
+        String[] descs = new String[]{"2015年", "2016年", "2017年"};
+        int[] colors = new int[]{0xFF7394E7, 0xFFF87FA9, 0xFF60D1AC};
         for (int i = 0; i < 3; i++) {
             entries[i] = new GridData.Entry(colors[i], descs[i], new Random().nextInt(101));
         }

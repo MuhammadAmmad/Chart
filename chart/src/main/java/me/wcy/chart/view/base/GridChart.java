@@ -2,6 +2,7 @@ package me.wcy.chart.view.base;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.DashPathEffect;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import me.wcy.chart.ChartUtils;
+import me.wcy.chart.R;
 import me.wcy.chart.config.base.GridConfig;
 import me.wcy.chart.data.GridData;
 import me.wcy.chart.gesture.ChartGestureDetector;
@@ -33,7 +35,6 @@ public abstract class GridChart extends View {
     private static final int TEXT_MARGIN = ChartUtils.dp2px(5);
     private static final int ROW_COUNT = 5;
     private static final int MAX_SCALE = 3;
-    private static final float FLING_MIN_VELOCITY_X = 200;
 
     private Paint solidLinePaint = new Paint();
     private Paint dashLinePaint = new Paint();
@@ -61,6 +62,7 @@ public abstract class GridChart extends View {
 
     protected int firstRenderItem;
     protected int lastRenderItem;
+    private float titleMaxWidth;
 
     protected float translateX;
     private float scaleFocusX;
@@ -79,12 +81,16 @@ public abstract class GridChart extends View {
 
     public GridChart(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init();
+        init(attrs);
     }
 
-    private void init() {
+    private void init(AttributeSet attrs) {
         setLayerType(LAYER_TYPE_SOFTWARE, null);
         config = getConfig();
+
+        TypedArray ta = getResources().obtainAttributes(attrs, R.styleable.GridChart);
+        config.setTouchable(ta.getBoolean(R.styleable.GridChart_gcTouchable, true));
+        ta.recycle();
 
         gestureDetector = new ChartGestureDetector(getContext());
         gestureDetector.setGestureListener(gestureListener);
@@ -106,11 +112,14 @@ public abstract class GridChart extends View {
             enterAnimator.end();
         }
 
+        if (dataList == null) {
+            throw new IllegalArgumentException("data list can not be null");
+        }
         this.dataList.clear();
         this.dataList.addAll(dataList);
 
         if (hasLayout) {
-            onConfig();
+            onDataChanged();
             if (showAnimation) {
                 enterAnimator.start();
             } else {
@@ -130,7 +139,7 @@ public abstract class GridChart extends View {
         super.onLayout(changed, left, top, right, bottom);
         if (!hasLayout) {
             hasLayout = true;
-            onConfig();
+            onDataChanged();
 
             if (isNeedAnimation) {
                 enterAnimator.start();
@@ -138,16 +147,18 @@ public abstract class GridChart extends View {
         }
     }
 
-    protected void onConfig() {
+    protected void onDataChanged() {
+        if (dataList.isEmpty()) {
+            return;
+        }
+
         translateX = 0;
         scaleValue = 1;
+        titleMaxWidth = -1;
         gridHeight = calculateGridHeight();
         itemHeight = (getChartBottom() - getTextHeight()) / ROW_COUNT;
         horizontalOffset = textPaint.measureText(String.valueOf(gridHeight * 5)) + TEXT_MARGIN;
         defaultItemWidth = getChartWidth() / dataList.size();
-
-        calculateRenderRange();
-        calculateRenderTitle();
     }
 
     protected void setupPaints() {
@@ -195,26 +206,21 @@ public abstract class GridChart extends View {
             return;
         }
 
+        calculateRenderRange();
+        calculateRenderTitle();
+
         drawGridLine(canvas);
         drawGridText(canvas);
         drawDesc(canvas);
 
-        int count = canvas.save();
-        canvas.clipRect(0, 0, getWidth() * enterFraction, getHeight());
-
-        canvas.save();
-        canvas.translate(horizontalOffset + translateX, 0);
-        drawTitle(canvas);
-        canvas.restore();
-
         canvas.save();
         canvas.translate(horizontalOffset, 0);
-        canvas.clipRect(0, 0, getChartWidth(), getHeight());
+        canvas.clipRect(0, 0, getChartWidth() * enterFraction, getHeight());
         canvas.translate(translateX, 0);
+        drawVerticalLine(canvas);
+        drawTitle(canvas);
         drawContent(canvas);
         canvas.restore();
-
-        canvas.restoreToCount(count);
     }
 
     @Override
@@ -248,38 +254,46 @@ public abstract class GridChart extends View {
         }
     }
 
+    private void drawVerticalLine(Canvas canvas) {
+        linePath.reset();
+        for (int i = firstRenderItem; i <= lastRenderItem; i++) {
+            if (i > 0) {
+                linePath.moveTo(getScaledItemWidth() * i, getChartBottom());
+                linePath.lineTo(getScaledItemWidth() * i, getTextHeight());
+            }
+        }
+        canvas.drawPath(linePath, dashLinePaint);
+    }
+
+    private void drawTitle(Canvas canvas) {
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setColor(getConfig().getTextColor());
+        for (int i = 0; i < renderTitleList.size(); i++) {
+            int index = renderTitleList.get(i);
+            String title = dataList.get(index).getTitle();
+            float drawX = getScaledItemWidth() * (index + 0.5f);
+            canvas.drawText(title, drawX, getChartBottom() + getBottomTextHeight() - getTextOffsetY(), textPaint);
+        }
+    }
+
     private void calculateRenderTitle() {
-        int firstVisiblePoint = 0;
-        int lastVisiblePoint = dataList.size() - 1;
-        for (int i = 0; i < dataList.size(); i++) {
-            float currentX = getScaledItemWidth() * i;
-            if (currentX + translateX >= 0) {
-                firstVisiblePoint = i;
-                break;
+        if (titleMaxWidth < 0) {
+            // 计算title最大宽度
+            for (GridData data : dataList) {
+                float width = textPaint.measureText(data.getTitle());
+                if (width > titleMaxWidth) {
+                    titleMaxWidth = width;
+                }
             }
         }
 
-        for (int i = firstVisiblePoint; i < dataList.size(); i++) {
-            float nextX = getScaledItemWidth() * (i + 1);
-            if ((int) (nextX + translateX) > (int) getChartWidth()) {
-                lastVisiblePoint = i;
-                break;
-            }
-        }
+        float spacing = ChartUtils.dp2px(4);
+        float expectChartWidth = titleMaxWidth * dataList.size() + spacing * (dataList.size() - 1);
+        int skip = (int) Math.ceil(expectChartWidth / getChartMeasuredWidth());
 
         renderTitleList.clear();
-        int count = lastVisiblePoint - firstVisiblePoint + 1;
-        int maxCount = getMaxTitle();
-        if (count < maxCount) {
-            for (int i = firstVisiblePoint; i <= lastVisiblePoint; i++) {
-                renderTitleList.add(i);
-            }
-        } else {
-            float interval = (count - 1f) / (maxCount - 1);
-            for (int i = 0; i < maxCount; i++) {
-                int index = (int) Math.floor(firstVisiblePoint + interval * i);
-                renderTitleList.add(index);
-            }
+        for (int i = firstRenderItem; i <= lastRenderItem; i += skip) {
+            renderTitleList.add(i);
         }
     }
 
@@ -320,16 +334,6 @@ public abstract class GridChart extends View {
     protected float getTextOffsetY() {
         return fontMetrics.descent;
     }
-
-    protected int getMaxTitle() {
-        if (config.getMaxTitleCount() < 0) {
-            return dataList.size();
-        } else {
-            return config.getMaxTitleCount();
-        }
-    }
-
-    protected abstract void drawTitle(Canvas canvas);
 
     protected abstract void drawDesc(Canvas canvas);
 
@@ -408,10 +412,6 @@ public abstract class GridChart extends View {
     }
 
     private boolean fling(float velocityX) {
-        if (Math.abs(velocityX) < FLING_MIN_VELOCITY_X) {
-            return false;
-        }
-
         flingScroller = new Scroller(getContext());
         flingScroller.fling((int) translateX, 0, (int) velocityX, 0, (int) (getChartWidth() - getChartMeasuredWidth()), 0, 0, 0);
         flingAnimator = ValueAnimator.ofInt(0, 1);
@@ -474,10 +474,6 @@ public abstract class GridChart extends View {
         }
 
         scaleValue = newScaleValue;
-
-        calculateRenderRange();
-        calculateRenderTitle();
-
         invalidate();
         return true;
     }
@@ -491,10 +487,6 @@ public abstract class GridChart extends View {
 
         if (newTranslateX != translateX) {
             translateX = newTranslateX;
-
-            calculateRenderRange();
-            calculateRenderTitle();
-
             invalidate();
             return true;
         } else {

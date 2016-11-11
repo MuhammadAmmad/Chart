@@ -7,16 +7,21 @@ import me.wcy.chart.config.base.GridConfig;
  * Created by hzwangchenyan on 2016/10/10.
  */
 public class LineConfig extends GridConfig {
-    private float lineWidth = ChartUtils.dp2px(2);
-    private boolean isShowShadow = true;
+    // 曲线/折线
     private boolean isCurvedLine = false;
+    // 是否显示阴影
+    private boolean isShowShadow = false;
+    // 是否是渐变阴影
+    private boolean isGradientShadow = false;
 
-    public float getLineWidth() {
-        return lineWidth;
+    private float lineWidth = ChartUtils.dp2px(2);
+
+    public boolean isCurvedLine() {
+        return isCurvedLine;
     }
 
-    public void setLineWidth(float lineWidth) {
-        this.lineWidth = lineWidth;
+    public void setCurvedLine(boolean curvedLine) {
+        isCurvedLine = curvedLine;
     }
 
     public boolean isShowShadow() {
@@ -27,11 +32,19 @@ public class LineConfig extends GridConfig {
         isShowShadow = showShadow;
     }
 
-    public boolean isCurvedLine() {
-        return isCurvedLine;
+    public boolean isGradientShadow() {
+        return isGradientShadow;
     }
 
-    public void setCurvedLine(boolean curvedLine) {
-        isCurvedLine = curvedLine;
+    public void setGradientShadow(boolean gradientShadow) {
+        isGradientShadow = gradientShadow;
+    }
+
+    public float getLineWidth() {
+        return lineWidth;
+    }
+
+    public void setLineWidth(float lineWidth) {
+        this.lineWidth = lineWidth;
     }
 }

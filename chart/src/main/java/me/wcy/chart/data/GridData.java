@@ -2,7 +2,6 @@ package me.wcy.chart.data;
 
 public class GridData {
     private final String title;
-
     private final Entry[] entries;
 
     public GridData(String title, Entry[] entries) {
@@ -27,26 +26,18 @@ public class GridData {
     }
 
     public static class Entry {
-        // mutable
-        private float value;
-
-        // immutable
-        private final int lineColor;
+        // 不可变
+        private final int color;
         private final String desc;
 
+        // 可变
+        private float value;
+
         public Entry(int color, String desc, float value) {
-            this.lineColor = color;
+            this.color = color;
             this.desc = desc;
 
             this.value = value;
-        }
-
-        public int getLineColor() {
-            return lineColor;
-        }
-
-        public String getDesc() {
-            return desc;
         }
 
         public float getValue() {
@@ -55,6 +46,14 @@ public class GridData {
 
         public void setValue(float value) {
             this.value = value;
+        }
+
+        public int getColor() {
+            return color;
+        }
+
+        public String getDesc() {
+            return desc;
         }
     }
 }

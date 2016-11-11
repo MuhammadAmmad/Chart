@@ -6,9 +6,9 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 
 import me.wcy.chart.ChartUtils;
-import me.wcy.chart.view.base.GridChart;
 import me.wcy.chart.config.BarConfig;
 import me.wcy.chart.data.GridData;
+import me.wcy.chart.view.base.GridChart;
 
 public class BarChart extends GridChart {
     private Paint barPaint = new Paint();
@@ -62,8 +62,8 @@ public class BarChart extends GridChart {
 
         textPaint.setTextAlign(Paint.Align.LEFT);
         for (GridData.Entry entry : dataList.get(0).getEntries()) {
-            barPaint.setColor(entry.getLineColor());
-            textPaint.setColor(entry.getLineColor());
+            barPaint.setColor(entry.getColor());
+            textPaint.setColor(entry.getColor());
             canvas.drawRect(descStartX, getHeight() - (getTextHeight() + blockLength) / 2,
                     descStartX + blockLength, getHeight() - (getTextHeight() - blockLength) / 2, barPaint);
 
@@ -74,31 +74,18 @@ public class BarChart extends GridChart {
     }
 
     @Override
-    protected void drawTitle(Canvas canvas) {
-        textPaint.setTextAlign(Paint.Align.CENTER);
-        textPaint.setColor(getConfig().getTextColor());
-        for (int i = 0; i < renderTitleList.size(); i++) {
-            int index = renderTitleList.get(i);
-            String title = dataList.get(index).getTitle();
-            float drawX = getScaledItemWidth() * (index + 0.5f);
-            canvas.drawText(title, drawX, getChartBottom() + getBottomTextHeight() - getTextOffsetY(), textPaint);
-        }
-    }
-
-    @Override
     protected void drawContent(Canvas canvas) {
-        // 绘制柱状图
         for (int i = firstRenderItem; i <= lastRenderItem; i++) {
             GridData.Entry[] entries = dataList.get(i).getEntries();
             // 设定间距为柱宽的1/3
             float spacing = getScaledItemWidth() / (entries.length * 4 + 1);
             float barWidth = spacing * 3;
             for (int j = 0; j < entries.length; j++) {
-                barPaint.setColor(entries[j].getLineColor());
+                barPaint.setColor(entries[j].getColor());
                 float left = getScaledItemWidth() * i + spacing + (barWidth + spacing) * j;
                 float right = left + barWidth;
                 float bottom = getChartBottom();
-                float top = bottom - entries[j].getValue() * getItemHeightRatio() * enterFraction;
+                float top = bottom - entries[j].getValue() * getItemHeightRatio();
                 canvas.drawRect(left, top, right, bottom, barPaint);
             }
         }
