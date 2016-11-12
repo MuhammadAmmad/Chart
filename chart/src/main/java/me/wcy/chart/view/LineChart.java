@@ -318,7 +318,7 @@ public class LineChart extends GridChart {
                 // 不合法
                 continue;
             }
-            float radius = defaultItemWidth * 0.5f;
+            float radius = getScaledItemWidth() * 0.5f;
             rect.left = measuredX - radius;
             rect.top = 0;
             rect.right = measuredX + radius;

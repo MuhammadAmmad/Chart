@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity implements PullToRefreshLayo
 
                 pullToRefreshLayout.refreshFinish(PullToRefreshLayout.SUCCEED);
             }
-        }, 2000);
+        }, 1000);
     }
 
     @Override
