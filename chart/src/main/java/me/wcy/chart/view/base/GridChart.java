@@ -21,7 +21,7 @@ import android.widget.Scroller;
 import java.util.ArrayList;
 import java.util.List;
 
-import me.wcy.chart.ChartUtils;
+import me.wcy.chart.utils.ChartUtils;
 import me.wcy.chart.R;
 import me.wcy.chart.config.base.GridConfig;
 import me.wcy.chart.data.GridData;
@@ -32,7 +32,6 @@ import me.wcy.chart.gesture.ChartGestureListener;
  * Created by hzwangchenyan on 2016/10/9.
  */
 public abstract class GridChart extends View {
-    private static final int TEXT_MARGIN = ChartUtils.dp2px(5);
     private static final int ROW_COUNT = 5;
     private static final int MAX_SCALE = 3;
 
@@ -157,7 +156,7 @@ public abstract class GridChart extends View {
         titleMaxWidth = -1;
         gridHeight = calculateGridHeight();
         itemHeight = (getChartBottom() - getTextHeight()) / ROW_COUNT;
-        horizontalOffset = textPaint.measureText(String.valueOf(gridHeight * 5)) + TEXT_MARGIN;
+        horizontalOffset = textPaint.measureText(String.valueOf(gridHeight * 5)) + getTextMargin();
         defaultItemWidth = getChartWidth() / dataList.size();
     }
 
@@ -174,14 +173,14 @@ public abstract class GridChart extends View {
         dashLinePaint.setStyle(Paint.Style.STROKE);
         dashLinePaint.setStrokeWidth(1);
         // 设置虚线的间隔和点的长度
-        float dot = ChartUtils.dp2px(1);
+        float dot = ChartUtils.dp2px(getContext(), 1);
         PathEffect effects = new DashPathEffect(new float[]{dot, dot}, 1);
         dashLinePaint.setPathEffect(effects);
 
         // 实线画笔
         solidLinePaint.setColor(config.getGridLineColor());
         solidLinePaint.setStyle(Paint.Style.STROKE);
-        solidLinePaint.setStrokeWidth(ChartUtils.dp2px(1));
+        solidLinePaint.setStrokeWidth(ChartUtils.dp2px(getContext(), 1));
     }
 
     private int calculateGridHeight() {
@@ -249,7 +248,7 @@ public abstract class GridChart extends View {
         textPaint.setTextAlign(Paint.Align.RIGHT);
         for (int i = 0; i <= ROW_COUNT; i++) {
             String text = String.valueOf(gridHeight * i);
-            canvas.drawText(text, horizontalOffset - TEXT_MARGIN, getChartBottom() - itemHeight * i +
+            canvas.drawText(text, horizontalOffset - getTextMargin(), getChartBottom() - itemHeight * i +
                     getTextHeight() / 2 - getTextOffsetY(), textPaint);
         }
     }
@@ -258,8 +257,8 @@ public abstract class GridChart extends View {
         linePath.reset();
         for (int i = firstRenderItem; i <= lastRenderItem; i++) {
             if (i > 0) {
-                linePath.moveTo(getScaledItemWidth() * i, getChartBottom());
-                linePath.lineTo(getScaledItemWidth() * i, getTextHeight());
+                linePath.moveTo(getItemScaledWidth() * i, getChartBottom());
+                linePath.lineTo(getItemScaledWidth() * i, getTextHeight());
             }
         }
         canvas.drawPath(linePath, dashLinePaint);
@@ -271,7 +270,7 @@ public abstract class GridChart extends View {
         for (int i = 0; i < renderTitleList.size(); i++) {
             int index = renderTitleList.get(i);
             String title = dataList.get(index).getTitle();
-            float drawX = getScaledItemWidth() * (index + 0.5f);
+            float drawX = getItemScaledWidth() * (index + 0.5f);
             canvas.drawText(title, drawX, getChartBottom() + getBottomTextHeight() - getTextOffsetY(), textPaint);
         }
     }
@@ -287,7 +286,7 @@ public abstract class GridChart extends View {
             }
         }
 
-        float spacing = ChartUtils.dp2px(4);
+        float spacing = ChartUtils.dp2px(getContext(), 4);
         float expectChartWidth = titleMaxWidth * dataList.size() + spacing * (dataList.size() - 1);
         int skip = (int) Math.ceil(expectChartWidth / getChartMeasuredWidth());
 
@@ -308,11 +307,11 @@ public abstract class GridChart extends View {
     }
 
     protected float getBottomTextHeight() {
-        return getTextHeight() * 1.5f;
+        return getTextHeight() + getTextMargin();
     }
 
     protected float getDescHeight() {
-        return getTextHeight() + ChartUtils.dp2px(10);
+        return getTextHeight() + ChartUtils.dp2px(getContext(), 10);
     }
 
     protected float getChartWidth() {
@@ -320,15 +319,19 @@ public abstract class GridChart extends View {
     }
 
     protected float getChartMeasuredWidth() {
-        return getScaledItemWidth() * dataList.size();
+        return getItemScaledWidth() * dataList.size();
     }
 
-    protected float getScaledItemWidth() {
+    protected float getItemScaledWidth() {
         return defaultItemWidth * scaleValue;
     }
 
     protected float getItemHeightRatio() {
         return itemHeight / gridHeight;
+    }
+
+    protected float getTextMargin() {
+        return getTextHeight() / 2;
     }
 
     protected float getTextOffsetY() {

@@ -5,7 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 
-import me.wcy.chart.ChartUtils;
+import me.wcy.chart.utils.ChartUtils;
 import me.wcy.chart.config.BarConfig;
 import me.wcy.chart.data.GridData;
 import me.wcy.chart.view.base.GridChart;
@@ -52,8 +52,8 @@ public class BarChart extends GridChart {
     @Override
     protected void drawDesc(Canvas canvas) {
         float blockLength = getTextHeight() / 2;
-        float spacing1 = ChartUtils.dp2px(5);
-        float spacing2 = ChartUtils.dp2px(15);
+        float spacing1 = ChartUtils.dp2px(getContext(), 4);
+        float spacing2 = ChartUtils.dp2px(getContext(), 10);
 
         float descMaxLength = (blockLength + spacing1) * dataList.get(0).getEntries().length +
                 spacing2 * (dataList.get(0).getEntries().length - 1);
@@ -81,11 +81,11 @@ public class BarChart extends GridChart {
         for (int i = firstRenderItem; i <= lastRenderItem; i++) {
             GridData.Entry[] entries = dataList.get(i).getEntries();
             // 设定间距为柱宽的1/3
-            float spacing = getScaledItemWidth() / (entries.length * 4 + 1);
+            float spacing = getItemScaledWidth() / (entries.length * 4 + 1);
             float barWidth = spacing * 3;
             for (int j = 0; j < entries.length; j++) {
                 barPaint.setColor(entries[j].getColor());
-                float left = getScaledItemWidth() * i + spacing + (barWidth + spacing) * j;
+                float left = getItemScaledWidth() * i + spacing + (barWidth + spacing) * j;
                 float right = left + barWidth;
                 float bottom = getChartBottom();
                 float top = bottom - entries[j].getValue() * getItemHeightRatio();
@@ -99,14 +99,14 @@ public class BarChart extends GridChart {
         firstRenderItem = 0;
         lastRenderItem = dataList.size() - 1;
         for (int i = 0; i < dataList.size(); i++) {
-            if (getScaledItemWidth() * (i + 1) + translateX > 0) {
+            if (getItemScaledWidth() * (i + 1) + translateX > 0) {
                 firstRenderItem = i;
                 break;
             }
         }
 
         for (int i = firstRenderItem; i < dataList.size(); i++) {
-            if (getScaledItemWidth() * (i + 1) + translateX >= getChartWidth()) {
+            if (getItemScaledWidth() * (i + 1) + translateX >= getChartWidth()) {
                 lastRenderItem = i;
                 break;
             }

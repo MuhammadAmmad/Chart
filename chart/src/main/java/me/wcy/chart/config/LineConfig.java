@@ -1,6 +1,5 @@
 package me.wcy.chart.config;
 
-import me.wcy.chart.ChartUtils;
 import me.wcy.chart.config.base.GridConfig;
 
 /**
@@ -14,7 +13,7 @@ public class LineConfig extends GridConfig {
     // 是否是渐变阴影
     private boolean isGradientShadow = false;
 
-    private float lineWidth = ChartUtils.dp2px(2);
+    private float lineWidth = 6;
 
     public boolean isCurvedLine() {
         return isCurvedLine;

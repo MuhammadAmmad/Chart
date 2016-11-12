@@ -15,7 +15,7 @@ import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 
-import me.wcy.chart.ChartUtils;
+import me.wcy.chart.utils.ChartUtils;
 import me.wcy.chart.R;
 import me.wcy.chart.config.LineConfig;
 import me.wcy.chart.data.GridData;
@@ -84,7 +84,7 @@ public class LineChart extends GridChart {
         tapLinePaint.setAntiAlias(true);
         tapLinePaint.setColor(Color.GRAY);
         tapLinePaint.setStyle(Paint.Style.STROKE);
-        tapLinePaint.setStrokeWidth(ChartUtils.dp2px(1));
+        tapLinePaint.setStrokeWidth(ChartUtils.dp2px(getContext(), 1));
 
         // 圆点画笔
         pointPaint.setAntiAlias(true);
@@ -129,9 +129,9 @@ public class LineChart extends GridChart {
 
     @Override
     protected void drawDesc(Canvas canvas) {
-        float pointRadius = ChartUtils.dp2px(3.5f);
-        float spacing1 = ChartUtils.dp2px(5);
-        float spacing2 = ChartUtils.dp2px(15);
+        float pointRadius = ChartUtils.dp2px(getContext(), 3f);
+        float spacing1 = ChartUtils.dp2px(getContext(), 4);
+        float spacing2 = ChartUtils.dp2px(getContext(), 10);
         float descMaxLength = (pointRadius * 2 + spacing1) * dataList.get(0).getEntries().length +
                 spacing2 * (dataList.get(0).getEntries().length - 1);
         for (GridData.Entry entry : dataList.get(0).getEntries()) {
@@ -170,9 +170,9 @@ public class LineChart extends GridChart {
         float currentX, currentY, nextX, nextY;
         path.reset();
         for (int i = firstRenderItem; i < lastRenderItem; i++) {
-            currentX = getScaledItemWidth() * (i + 0.5f);
+            currentX = getItemScaledWidth() * (i + 0.5f);
             currentY = getChartBottom() - (dataList.get(i).getEntries()[index].getValue() * getItemHeightRatio());
-            nextX = getScaledItemWidth() * (i + 1 + 0.5f);
+            nextX = getItemScaledWidth() * (i + 1 + 0.5f);
             nextY = getChartBottom() - (dataList.get(i + 1).getEntries()[index].getValue() * getItemHeightRatio());
 
             if (i == firstRenderItem) {
@@ -196,10 +196,10 @@ public class LineChart extends GridChart {
             } else {
                 shadowPaint.setColor(shadowColors[index]);
             }
-            float lastRenderX = getScaledItemWidth() * (lastRenderItem + 0.5f);
+            float lastRenderX = getItemScaledWidth() * (lastRenderItem + 0.5f);
             path.lineTo(lastRenderX, getChartBottom());
-            path.lineTo(getScaledItemWidth() * (firstRenderItem + 0.5f), getChartBottom());
-            path.lineTo(getScaledItemWidth() * (firstRenderItem + 0.5f), getChartBottom() - (dataList.get(firstRenderItem).getEntries()[0].getValue() * getItemHeightRatio()));
+            path.lineTo(getItemScaledWidth() * (firstRenderItem + 0.5f), getChartBottom());
+            path.lineTo(getItemScaledWidth() * (firstRenderItem + 0.5f), getChartBottom() - (dataList.get(firstRenderItem).getEntries()[0].getValue() * getItemHeightRatio()));
             canvas.drawPath(path, shadowPaint);
         }
     }
@@ -207,15 +207,15 @@ public class LineChart extends GridChart {
     private void drawTips(Canvas canvas) {
         GridData tapData = dataList.get(tapPosition);
 
-        canvas.drawLine(getScaledItemWidth() * (tapPosition + 0.5f), getTextHeight(),
-                getScaledItemWidth() * (tapPosition + 0.5f), getChartBottom(), tapLinePaint);
+        canvas.drawLine(getItemScaledWidth() * (tapPosition + 0.5f), getTextHeight(),
+                getItemScaledWidth() * (tapPosition + 0.5f), getChartBottom(), tapLinePaint);
 
-        float pointX = getScaledItemWidth() * (tapPosition + 0.5f);
+        float pointX = getItemScaledWidth() * (tapPosition + 0.5f);
         for (GridData.Entry entry : tapData.getEntries()) {
             float pointY = getChartBottom() - (entry.getValue() * getItemHeightRatio());
             pointPaint.setColor(entry.getColor());
-            canvas.drawCircle(pointX, pointY, ChartUtils.dp2px(4), clearPaint);
-            canvas.drawCircle(pointX, pointY, ChartUtils.dp2px(3), pointPaint);
+            canvas.drawCircle(pointX, pointY, ChartUtils.dp2px(getContext(), 4), clearPaint);
+            canvas.drawCircle(pointX, pointY, ChartUtils.dp2px(getContext(), 3), pointPaint);
         }
 
         drawTipsBackground(canvas);
@@ -223,12 +223,12 @@ public class LineChart extends GridChart {
     }
 
     private void drawTipsBackground(Canvas canvas) {
-        float textVerticalSpacing = ChartUtils.dp2px(5);
-        float tipsPointRadius = ChartUtils.dp2px(4);
-        float spacing1 = ChartUtils.dp2px(4);
-        float spacing2 = ChartUtils.dp2px(10);
-        float tipsPadding = ChartUtils.dp2px(10);
-        float tipsMargin = ChartUtils.dp2px(10);
+        float textVerticalSpacing = ChartUtils.dp2px(getContext(), 5);
+        float tipsPointRadius = ChartUtils.dp2px(getContext(), 4);
+        float spacing1 = ChartUtils.dp2px(getContext(), 4);
+        float spacing2 = ChartUtils.dp2px(getContext(), 10);
+        float tipsPadding = ChartUtils.dp2px(getContext(), 10);
+        float tipsMargin = ChartUtils.dp2px(getContext(), 10);
 
         GridData tapData = dataList.get(tapPosition);
 
@@ -246,25 +246,25 @@ public class LineChart extends GridChart {
         float rectWidth = Math.max(maxItemWidth, tipsTitleWidth) + tipsPadding * 2;
         float rectHeight = (getTextHeight() + textVerticalSpacing) * tapData.getEntries().length + getTextHeight() + tipsPadding * 2;
 
-        float rectLeft = getScaledItemWidth() * (tapPosition + 0.5f) + tipsMargin;
+        float rectLeft = getItemScaledWidth() * (tapPosition + 0.5f) + tipsMargin;
         float rectBottom = getChartBottom() - (getChartBottom() - getTextHeight() - rectHeight) / 2;
         tipsRect.set(rectLeft, rectBottom - rectHeight, rectLeft + rectWidth, rectBottom);
 
         if (tipsRect.right + translateX > getChartWidth() - tipsMargin) {
-            tipsRect.offsetTo(getScaledItemWidth() * (tapPosition + 0.5f) - tipsMargin - tipsRect.width(), tipsRect.top);
+            tipsRect.offsetTo(getItemScaledWidth() * (tapPosition + 0.5f) - tipsMargin - tipsRect.width(), tipsRect.top);
         }
 
-        Drawable drawable = getContext().getResources().getDrawable(R.drawable.card_bg);
+        Drawable drawable = getContext().getResources().getDrawable(R.drawable.tips_bg);
         drawable.setBounds((int) tipsRect.left, (int) tipsRect.top, (int) tipsRect.right, (int) tipsRect.bottom);
         drawable.draw(canvas);
     }
 
     private void drawTipsText(Canvas canvas) {
-        float textVerticalSpacing = ChartUtils.dp2px(5);
-        float tipsPointRadius = ChartUtils.dp2px(4);
-        float spacing1 = ChartUtils.dp2px(4);
-        float spacing2 = ChartUtils.dp2px(10);
-        float tipsPadding = ChartUtils.dp2px(10);
+        float textVerticalSpacing = ChartUtils.dp2px(getContext(), 5);
+        float tipsPointRadius = ChartUtils.dp2px(getContext(), 3);
+        float spacing1 = ChartUtils.dp2px(getContext(), 4);
+        float spacing2 = ChartUtils.dp2px(getContext(), 10);
+        float tipsPadding = ChartUtils.dp2px(getContext(), 10);
 
         GridData tapData = dataList.get(tapPosition);
 
@@ -309,7 +309,7 @@ public class LineChart extends GridChart {
         }
         RectF rect = new RectF();
         for (int i = 0; i < dataList.size(); i++) {
-            float measuredX = getScaledItemWidth() * (i + 0.5f) + translateX;
+            float measuredX = getItemScaledWidth() * (i + 0.5f) + translateX;
             if (measuredX < 0 || (int) measuredX > (int) (getWidth() - horizontalOffset)) {
                 // 超出屏幕不关心
                 continue;
@@ -318,7 +318,7 @@ public class LineChart extends GridChart {
                 // 不合法
                 continue;
             }
-            float radius = getScaledItemWidth() * 0.5f;
+            float radius = getItemScaledWidth() * 0.5f;
             rect.left = measuredX - radius;
             rect.top = 0;
             rect.right = measuredX + radius;
@@ -338,7 +338,7 @@ public class LineChart extends GridChart {
         firstRenderItem = 0;
         lastRenderItem = dataList.size() - 1;
         for (int i = 0; i < dataList.size() - 1; i++) {
-            float nextX = getScaledItemWidth() * (i + 1 + 0.5f);
+            float nextX = getItemScaledWidth() * (i + 1 + 0.5f);
 
             if (nextX + translateX > 0) {
                 firstRenderItem = i;
@@ -347,7 +347,7 @@ public class LineChart extends GridChart {
         }
 
         for (int i = firstRenderItem + 1; i < dataList.size(); i++) {
-            float x = getScaledItemWidth() * (i + 0.5f);
+            float x = getItemScaledWidth() * (i + 0.5f);
 
             if (x + translateX >= getChartWidth()) {
                 lastRenderItem = i;

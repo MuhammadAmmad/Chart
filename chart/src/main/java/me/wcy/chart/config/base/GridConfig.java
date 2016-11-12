@@ -2,14 +2,12 @@ package me.wcy.chart.config.base;
 
 import android.graphics.Color;
 
-import me.wcy.chart.ChartUtils;
-
 public abstract class GridConfig {
     private boolean isTouchable = true;
 
     private long enterAnimationDuration = 600;
     private int gridLineColor = Color.LTGRAY;
-    private float textSize = ChartUtils.sp2px(12);
+    private float textSize = 36;
     private int textColor = Color.GRAY;
 
     public boolean isTouchable() {
