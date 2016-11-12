@@ -2,7 +2,6 @@ package me.wcy.chartsample;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.widget.ScrollView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,29 +11,52 @@ import me.wcy.chart.data.GridData;
 import me.wcy.chart.view.BarChart;
 import me.wcy.chart.view.LineChart;
 import me.wcy.chart.view.base.GridChart;
+import me.wcy.chartsample.pulltorefresh.PullToRefreshLayout;
+import me.wcy.chartsample.pulltorefresh.PullableScrollView;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements PullToRefreshLayout.OnRefreshListener {
+    private LineChart lineChart;
+    private LineChart lineChart2;
+    private BarChart barChart;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ScrollView scrollView = (ScrollView) findViewById(R.id.scroll_view);
-        LineChart lineChart = (LineChart) findViewById(R.id.line_chart);
-        LineChart lineChart2 = (LineChart) findViewById(R.id.line_chart2);
-        BarChart barChart = (BarChart) findViewById(R.id.bar_chart);
+        PullToRefreshLayout ptrLayout = (PullToRefreshLayout) findViewById(R.id.ptr_layout);
+        PullableScrollView scrollView = (PullableScrollView) findViewById(R.id.scroll_view);
+        lineChart = (LineChart) findViewById(R.id.line_chart);
+        lineChart2 = (LineChart) findViewById(R.id.line_chart2);
+        barChart = (BarChart) findViewById(R.id.bar_chart);
+
+        ptrLayout.setOnRefreshListener(this);
+        scrollView.setEnable(true, false);
 
         lineChart.setScrollView(scrollView);
         lineChart2.setScrollView(scrollView);
         barChart.setScrollView(scrollView);
 
-        setChartData(lineChart);
-        setChartData(lineChart2);
-        setChartData(barChart);
+        setChartData(lineChart, lineChart2, barChart);
     }
 
-    private void setChartData(GridChart chart) {
+    @Override
+    public void onRefresh(final PullToRefreshLayout pullToRefreshLayout) {
+        pullToRefreshLayout.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                setChartData(lineChart, lineChart2, barChart);
+
+                pullToRefreshLayout.refreshFinish(PullToRefreshLayout.SUCCEED);
+            }
+        }, 2000);
+    }
+
+    @Override
+    public void onLoadMore(PullToRefreshLayout pullToRefreshLayout) {
+    }
+
+    private void setChartData(GridChart... charts) {
         List<GridData> dataList = new ArrayList<>();
         dataList.add(randomData("1月"));
         dataList.add(randomData("2月"));
@@ -49,7 +71,9 @@ public class MainActivity extends AppCompatActivity {
         dataList.add(randomData("11月"));
         dataList.add(randomData("12月"));
 
-        chart.setDataList(dataList, true);
+        for (GridChart chart : charts) {
+            chart.setDataList(dataList, true);
+        }
     }
 
     private GridData randomData(String title) {

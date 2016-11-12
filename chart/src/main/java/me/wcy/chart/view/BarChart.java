@@ -10,6 +10,9 @@ import me.wcy.chart.config.BarConfig;
 import me.wcy.chart.data.GridData;
 import me.wcy.chart.view.base.GridChart;
 
+/**
+ * Created by hzwangchenyan on 2016/10/8.
+ */
 public class BarChart extends GridChart {
     private Paint barPaint = new Paint();
 
