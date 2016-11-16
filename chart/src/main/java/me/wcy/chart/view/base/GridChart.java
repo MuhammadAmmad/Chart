@@ -21,12 +21,12 @@ import android.widget.Scroller;
 import java.util.ArrayList;
 import java.util.List;
 
-import me.wcy.chart.utils.ChartUtils;
 import me.wcy.chart.R;
 import me.wcy.chart.config.base.GridConfig;
 import me.wcy.chart.data.GridData;
 import me.wcy.chart.gesture.ChartGestureDetector;
 import me.wcy.chart.gesture.ChartGestureListener;
+import me.wcy.chart.utils.ChartUtils;
 
 /**
  * Created by hzwangchenyan on 2016/10/9.
@@ -50,9 +50,7 @@ public abstract class GridChart extends View {
     private ScrollView scrollView;
     protected GridConfig config;
     private ChartGestureDetector gestureDetector;
-
     protected List<GridData> dataList = new ArrayList<>();
-    protected List<Integer> renderTitleList = new ArrayList<>();
 
     protected float defaultItemWidth;
     private float itemHeight;
@@ -61,6 +59,7 @@ public abstract class GridChart extends View {
 
     protected int firstRenderItem;
     protected int lastRenderItem;
+    protected List<Integer> renderTitleList = new ArrayList<>();
     private float titleMaxWidth;
 
     protected float translateX;
@@ -153,7 +152,7 @@ public abstract class GridChart extends View {
 
         translateX = 0;
         scaleValue = 1;
-        titleMaxWidth = -1;
+        titleMaxWidth = calculateTitleMaxWidth();
         gridHeight = calculateGridHeight();
         itemHeight = (getChartBottom() - getTextHeight()) / ROW_COUNT;
         horizontalOffset = textPaint.measureText(String.valueOf(gridHeight * 5)) + getTextMargin();
@@ -181,21 +180,6 @@ public abstract class GridChart extends View {
         solidLinePaint.setColor(config.getGridLineColor());
         solidLinePaint.setStyle(Paint.Style.STROKE);
         solidLinePaint.setStrokeWidth(ChartUtils.dp2px(getContext(), 1));
-    }
-
-    private int calculateGridHeight() {
-        float max = 0;
-        for (GridData data : dataList) {
-            max = Math.max(max, data.getMaxValue());
-        }
-
-        int gridHeight = (int) Math.ceil(max / 5);
-        gridHeight = (gridHeight == 0) ? 1 : gridHeight;
-
-        if (gridHeight > 5) {
-            gridHeight = (int) Math.ceil((float) gridHeight / 5) * 5;
-        }
-        return gridHeight;
     }
 
     @Override
@@ -276,16 +260,6 @@ public abstract class GridChart extends View {
     }
 
     private void calculateRenderTitle() {
-        if (titleMaxWidth < 0) {
-            // 计算title最大宽度
-            for (GridData data : dataList) {
-                float width = textPaint.measureText(data.getTitle());
-                if (width > titleMaxWidth) {
-                    titleMaxWidth = width;
-                }
-            }
-        }
-
         float spacing = ChartUtils.dp2px(getContext(), 4);
         float expectChartWidth = titleMaxWidth * dataList.size() + spacing * (dataList.size() - 1);
         int skip = (int) Math.ceil(expectChartWidth / getChartMeasuredWidth());
@@ -294,6 +268,30 @@ public abstract class GridChart extends View {
         for (int i = firstRenderItem; i <= lastRenderItem; i += skip) {
             renderTitleList.add(i);
         }
+    }
+
+    private float calculateTitleMaxWidth() {
+        float titleMaxWidth = -1;
+        for (GridData data : dataList) {
+            float width = textPaint.measureText(data.getTitle());
+            titleMaxWidth = Math.max(titleMaxWidth, width);
+        }
+        return titleMaxWidth;
+    }
+
+    private int calculateGridHeight() {
+        float max = 0;
+        for (GridData data : dataList) {
+            max = Math.max(max, data.getMaxValue());
+        }
+
+        int gridHeight = (int) Math.ceil(max / 5);
+        gridHeight = (gridHeight == 0) ? 1 : gridHeight;
+
+        if (gridHeight > 5) {
+            gridHeight = (int) Math.ceil((float) gridHeight / 5) * 5;
+        }
+        return gridHeight;
     }
 
     protected abstract GridConfig getConfig();
